@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useContext, useEffect, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import copy from 'clipboard-copy';
+import RecipeContext from '../context/RecipesContext';
 import { detailApi } from '../service/ApiFoods';
 import { nameDrinksApi } from '../service/ApiDrinks';
 import StartContinueButton from '../components/StartContinueButton';
@@ -14,7 +15,21 @@ import shareIcon from '../images/shareIcon.svg';
 import whiteHeartIcon from '../images/whiteHeartIcon.svg';
 import blackHeartIcon from '../images/blackHeartIcon.svg';
 
-function DetailFoods({ match }) {
+function handleingredients(objDetail) {
+  const VINTE = 20;
+  const arrayIngred = [];
+  for (let i = 1; i <= VINTE; i += 1) {
+    if (objDetail[0][`strIngredient${i}`]) {
+      arrayIngred.push(
+        `- ${objDetail[0][`strIngredient${i}`]} - ${objDetail[0][`strMeasure${i}`]}`,
+      );
+    }
+  }
+  return arrayIngred;
+}
+
+function DetailFoods() {
+  const { filtedMeals } = useContext(RecipeContext);
   const [objDetail, setObjDetail] = useState([]);
   const [recomDrink, setRecomDrink] = useState([]);
   const [isLinkCopied, setIsLinkCopied] = useState(false);
@@ -47,15 +62,14 @@ function DetailFoods({ match }) {
     return setIsLinkCopied(true);
   };
 
-  const { params: { id } } = match;
-  const idReceita = id;
+  const { id } = useParams();
 
   useEffect(() => {
     if (localStorage.getItem('favoriteRecipes')) {
       return setIsFavorite(getLocalStorageInfo('favoriteRecipes')
-        .some((meal) => meal.id === idReceita));
+        .some((meal) => meal.id === id));
     }
-  }, [idReceita]);
+  }, [id]);
 
   useEffect(() => {
     const apiDrinksRequest = async () => {
@@ -69,24 +83,21 @@ function DetailFoods({ match }) {
   }, []);
 
   useEffect(() => {
+    console.log(filtedMeals);
+    if (filtedMeals.some((item) => item.idMeal === id)) {
+      const detail = filtedMeals.filter((item) => item.idMeal === id);
+      return setObjDetail(detail);
+    }
     const apiRequest = async () => {
-      const detail = await detailApi(idReceita);
+      const detail = await detailApi(id);
       setObjDetail(detail);
     };
     apiRequest();
-  }, [idReceita]);
+  }, [id, filtedMeals]);
 
   if (objDetail.length === 0) return null;
 
-  const VINTE = 20;
-  const arrayIngred = [];
-  for (let i = 1; i <= VINTE; i += 1) {
-    if (objDetail[0][`strIngredient${i}`]) {
-      arrayIngred.push(
-        `- ${objDetail[0][`strIngredient${i}`]} - ${objDetail[0][`strMeasure${i}`]}`,
-      );
-    }
-  }
+  const arrayIngred = handleingredients(objDetail);
 
   const { idMeal, strCategory, strMeal, strArea,
     strMealThumb } = objDetail[0];
@@ -101,11 +112,11 @@ function DetailFoods({ match }) {
       name: strMeal,
       image: strMealThumb,
     };
-    if (isFavorite === false) {
+    if (!isFavorite) {
       addIdToLocalSto(favoriteRecipe, 'favoriteRecipes');
       setIsFavorite(true);
     } else {
-      deleteIdFromLocalSto(idReceita, 'favoriteRecipes');
+      deleteIdFromLocalSto(id, 'favoriteRecipes');
       setIsFavorite(false);
     }
   }

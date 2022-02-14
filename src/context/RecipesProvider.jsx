@@ -5,27 +5,28 @@ import {
   ingredientApi,
   nameApi,
   firstLetterApi,
-  defaultMealsApi,
   filterFoodButtons,
+  nationApi,
 } from '../service/ApiFoods';
 import {
   ingredientDrinksApi,
   nameDrinksApi,
   firstLetterDrinksApi,
-  defaultDrinksApi,
   filterDrinkButtons,
 } from '../service/ApiDrinks';
 
 function RecipeProvider({ children }) {
+  // Login
   const [searchInput, setSearchInput] = useState('');
   const [searchRadio, setSearchRadio] = useState('');
+  // Foods
   const [arrayMeals, setArrayMeals] = useState([]);
-  const [arrayDrinks, setArrayDrinks] = useState([]);
-  const [mealsData, setMealsData] = useState([]);
-  const [drinksData, setDrinkssData] = useState([]);
-  const [showPage, setShowPage] = useState(true);
-  const [newListDrinks, setNewListDrinks] = useState([]);
+  const [filtedMeals, setFiltedMeals] = useState([]);
   const [newListFoods, setNewListFoods] = useState([]);
+  // Drinks
+  const [arrayDrinks, setArrayDrinks] = useState([]);
+  const [filtedDrinks, setFiltedDrinks] = useState([]);
+  const [newListDrinks, setNewListDrinks] = useState([]);
 
   const verifyLength = (param) => {
     if (param === null || !param) {
@@ -33,19 +34,28 @@ function RecipeProvider({ children }) {
     }
   };
 
+  // console.log(arrayMeals.length, arrayDrinks.length);
+  // console.log(filtedMeals);
+
   useEffect(() => {
-    defaultMealsApi()
-      .then((newData) => setMealsData(newData));
+    async function apiMealRequest() {
+      const meals = await nameApi('');
+      verifyLength(meals);
+      setArrayMeals(meals);
+    }
+    apiMealRequest();
+    async function apiDrinkRequest() {
+      const drinks = await nameDrinksApi('');
+      verifyLength(drinks);
+      setArrayDrinks(drinks);
+    }
+    apiDrinkRequest();
   }, []);
 
   useEffect(() => {
-    defaultDrinksApi()
-      .then((newData) => setDrinkssData(newData));
-  }, []);
-
-  const showMainPage = () => {
-    setShowPage(!showPage);
-  };
+    setFiltedMeals(arrayMeals);
+    setFiltedDrinks(arrayDrinks);
+  }, [arrayMeals, arrayDrinks]);
 
   useEffect(() => {
     filterDrinkButtons()
@@ -77,7 +87,6 @@ function RecipeProvider({ children }) {
       verifyLength(meals);
       setArrayMeals(meals);
     }
-    showMainPage();
   };
 
   const handleClickDrinks = async () => {
@@ -100,7 +109,17 @@ function RecipeProvider({ children }) {
       verifyLength(drinks);
       setArrayDrinks(drinks);
     }
-    showMainPage();
+  };
+
+  const handleNationSelect = async (nation) => {
+    let meals;
+    if (!nation || nation === 'all') {
+      meals = await nameApi('');
+    } else {
+      meals = await nationApi(nation);
+    }
+    verifyLength(meals);
+    setArrayMeals(meals);
   };
 
   const contextValue = {
@@ -108,15 +127,19 @@ function RecipeProvider({ children }) {
     searchRadio,
     arrayMeals,
     arrayDrinks,
+    filtedMeals,
+    filtedDrinks,
+    newListDrinks,
+    newListFoods,
+    setArrayMeals,
+    setArrayDrinks,
+    setFiltedMeals,
     setSearchInput,
     setSearchRadio,
     handleClickFoods,
     handleClickDrinks,
-    mealsData,
-    showPage,
-    drinksData,
-    newListDrinks,
-    newListFoods,
+    setFiltedDrinks,
+    handleNationSelect,
   };
 
   return (
